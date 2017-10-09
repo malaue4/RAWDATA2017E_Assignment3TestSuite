@@ -122,7 +122,7 @@ namespace Assignment3TestSuite
                 Method = "update",
                 Path = "testing",
                 Date = DateTimeOffset.Now.ToString(),
-                Body = "SGVsbG8gV29ybGQ="
+                Body = (new { cid = 1, Name = "Beverages"}).ToJson()
             };
 
             client.SendRequest(request.ToJson());
@@ -154,27 +154,9 @@ namespace Assignment3TestSuite
             Assert.Contains("missing body", response.Status.ToLower());
         }
 
+        
         [Fact]
-        public void Constraint_RequestWhereBodyIsNotBase64_IllegalBodyError()
-        {
-            var client = Connect();
-
-            var request = new
-            {
-                Method = "update",
-                Path = "testing",
-                Date = UnixTimestamp(),
-                Body = "Hello World"
-            };
-
-            client.SendRequest(request.ToJson());
-            var response = client.ReadResponse();
-
-            Assert.Contains("illegal body", response.Status.ToLower());
-        }
-
-        [Fact]
-        public void Constraint_RequestWithInvalidJsonBody_IllegalBodyError()
+        public void Constraint_RequestUpdateWithoutJsonBody_IllegalBodyError()
         {
             var client = Connect();
 
@@ -183,7 +165,7 @@ namespace Assignment3TestSuite
                 Method = "update",
                 Path = "/api/categories/1",
                 Date = UnixTimestamp(),
-                Body = "Hello World".ToBase64()
+                Body = "Hello World"
             };
 
             client.SendRequest(request.ToJson());
@@ -204,13 +186,13 @@ namespace Assignment3TestSuite
             {
                 Method = "echo",
                 Date = UnixTimestamp(),
-                Body = "Hello World".ToBase64()
+                Body = "Hello World"
             };
 
             client.SendRequest(request.ToJson());
             var response = client.ReadResponse();
 
-            Assert.Equal("Hello World", response.Body.FromBase64());
+            Assert.Equal("Hello World", response.Body);
 
         }
 
@@ -236,8 +218,7 @@ namespace Assignment3TestSuite
 
             client.SendRequest(request.ToJson());
             var response = client.ReadResponse();
-            response.Body = response.Body.FromBase64();
-
+            
             var expectedResponse = new Response { Status = "4 Bad Request" };
 
             Assert.Equal(expectedResponse.ToJson().ToLower(), response.ToJson().ToLower());
@@ -257,8 +238,7 @@ namespace Assignment3TestSuite
 
             client.SendRequest(request.ToJson());
             var response = client.ReadResponse();
-            response.Body = response.Body.FromBase64();
-
+            
             var expectedResponse = new Response { Status = "4 Bad Request" };
 
             Assert.Equal(expectedResponse.ToJson().ToLower(), response.ToJson().ToLower());
@@ -274,13 +254,12 @@ namespace Assignment3TestSuite
                 Method = "create",
                 Path = "/api/categories/1",
                 Date = UnixTimestamp(),
-                Body = (new { Name = "" }).ToJson().ToBase64()
+                Body = (new { Name = "" }).ToJson()
             };
 
             client.SendRequest(request.ToJson());
             var response = client.ReadResponse();
-            response.Body = response.Body.FromBase64();
-
+            
             var expectedResponse = new Response { Status = "4 Bad Request" };
 
             Assert.Equal(expectedResponse.ToJson().ToLower(), response.ToJson().ToLower());
@@ -296,13 +275,12 @@ namespace Assignment3TestSuite
                 Method = "update",
                 Path = "/api/categories",
                 Date = UnixTimestamp(),
-                Body = (new { Name = "" }).ToJson().ToBase64()
+                Body = (new { Name = "" }).ToJson()
             };
 
             client.SendRequest(request.ToJson());
             var response = client.ReadResponse();
-            response.Body = response.Body.FromBase64();
-
+            
             var expectedResponse = new Response { Status = "4 Bad Request" };
 
             Assert.Equal(expectedResponse.ToJson().ToLower(), response.ToJson().ToLower());
@@ -322,8 +300,7 @@ namespace Assignment3TestSuite
 
             client.SendRequest(request.ToJson());
             var response = client.ReadResponse();
-            response.Body = response.Body.FromBase64();
-
+            
             var expectedResponse = new Response { Status = "4 Bad Request" };
 
             Assert.Equal(expectedResponse.ToJson().ToLower(), response.ToJson().ToLower());
@@ -347,8 +324,7 @@ namespace Assignment3TestSuite
 
             client.SendRequest(request.ToJson());
             var response = client.ReadResponse();
-            response.Body = response.Body.FromBase64();
-
+            
             var categories = new List<object>
             {
                 new {cid = 1, name = "Beverages"},
@@ -379,8 +355,7 @@ namespace Assignment3TestSuite
 
             client.SendRequest(request.ToJson());
             var response = client.ReadResponse();
-            response.Body = response.Body.FromBase64();
-
+            
             var expectedResponse = new Response
             {
                 Status = "1 Ok",
@@ -421,7 +396,7 @@ namespace Assignment3TestSuite
                 Method = "update",
                 Path = "/api/categories/1",
                 Date = UnixTimestamp(),
-                Body = (new { cid = 1, name = "BeveragesTesting" }).ToJson().ToBase64()
+                Body = (new { cid = 1, name = "BeveragesTesting" }).ToJson()
             };
 
             client.SendRequest(request.ToJson());
@@ -439,7 +414,7 @@ namespace Assignment3TestSuite
                 Method = "update",
                 Path = "/api/categories/1",
                 Date = UnixTimestamp(),
-                Body = (new { cid = 1, name = "Beverages" }).ToJson().ToBase64()
+                Body = (new { cid = 1, name = "Beverages" }).ToJson()
             };
 
             client.SendRequest(resetRequest.ToJson());
@@ -456,7 +431,7 @@ namespace Assignment3TestSuite
                 Method = "update",
                 Path = "/api/categories/1",
                 Date = UnixTimestamp(),
-                Body = (new { cid = 1, name = "BeveragesTesting" }).ToJson().ToBase64()
+                Body = (new { cid = 1, name = "BeveragesTesting" }).ToJson()
             };
 
             client.SendRequest(request.ToJson());
@@ -473,7 +448,7 @@ namespace Assignment3TestSuite
             client.SendRequest(readRequest.ToJson());
             var response = client.ReadResponse();
 
-            Assert.Equal("BeveragesTesting", response.Body.FromBase64().FromJson<Category>().Name);
+            Assert.Equal("BeveragesTesting", response.Body.FromJson<Category>().Name);
 
             // reset data
 
@@ -484,7 +459,7 @@ namespace Assignment3TestSuite
                 Method = "update",
                 Path = "/api/categories/1",
                 Date = UnixTimestamp(),
-                Body = (new { cid = 1, name = "Beverages" }).ToJson().ToBase64()
+                Body = (new { cid = 1, name = "Beverages" }).ToJson()
             };
 
             client.SendRequest(resetRequest.ToJson());
@@ -501,7 +476,7 @@ namespace Assignment3TestSuite
                 Method = "update",
                 Path = "/api/categories/123",
                 Date = UnixTimestamp(),
-                Body = (new { cid = 1, name = "BeveragesTesting" }).ToJson().ToBase64()
+                Body = (new { cid = 1, name = "BeveragesTesting" }).ToJson()
             };
 
             client.SendRequest(request.ToJson());
@@ -523,13 +498,13 @@ namespace Assignment3TestSuite
                 Method = "create",
                 Path = "/api/categories",
                 Date = UnixTimestamp(),
-                Body = (new { name = "Testing" }).ToJson().ToBase64()
+                Body = (new { name = "Testing" }).ToJson()
             };
 
             client.SendRequest(request.ToJson());
             var response = client.ReadResponse();
 
-            var category = response.Body.FromBase64().FromJson<Category>();
+            var category = response.Body.FromJson<Category>();
 
             Assert.Contains("Testing", category.Name);
             Assert.True(category.Id > 0);
@@ -561,7 +536,7 @@ namespace Assignment3TestSuite
                 Method = "create",
                 Path = "/api/categories",
                 Date = UnixTimestamp(),
-                Body = (new { name = "TestingDeleteCategory" }).ToJson().ToBase64()
+                Body = (new { name = "TestingDeleteCategory" }).ToJson()
             };
 
             client.SendRequest(request.ToJson());
@@ -571,7 +546,7 @@ namespace Assignment3TestSuite
             var verifyRequest = new
             {
                 Method = "delete",
-                Path = "/api/categories/" + response.Body.FromBase64().FromJson<Category>().Id,
+                Path = "/api/categories/" + response.Body.FromJson<Category>().Id,
                 Date = UnixTimestamp()
             };
 
@@ -629,16 +604,6 @@ namespace Assignment3TestSuite
 
     public static class Util
     {
-        public static string ToBase64(this string text)
-        {
-            return Encoding.UTF8.ToBase64(text);
-        }
-
-        public static string FromBase64(this string element)
-        {
-            return Encoding.UTF8.FromBase64(element);
-        }
-
         public static string ToJson(this object data)
         {
             return JsonConvert.SerializeObject(data,
@@ -675,28 +640,6 @@ namespace Assignment3TestSuite
                 var response = new { Status = "", Body = "" };
                 return JsonConvert.DeserializeObject<Response>(responseData);
             }
-        }
-
-        public static string ToBase64(this System.Text.Encoding encoding, string text)
-        {
-            if (text == null)
-            {
-                return null;
-            }
-
-            byte[] textAsBytes = encoding.GetBytes(text);
-            return Convert.ToBase64String(textAsBytes);
-        }
-
-        public static string FromBase64(this System.Text.Encoding encoding, string encodedText)
-        {
-            if (encodedText == null)
-            {
-                return null;
-            }
-
-            byte[] textAsBytes = Convert.FromBase64String(encodedText);
-            return encoding.GetString(textAsBytes);
         }
     }
 }
