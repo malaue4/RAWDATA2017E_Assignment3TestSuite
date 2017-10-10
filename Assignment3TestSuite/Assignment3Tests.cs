@@ -7,28 +7,14 @@ using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Xunit;
+using TestServer;
 
 namespace Assignment3TestSuite
 {
 
-    public class Response
-    {
-        public string Status { get; set; }
-        public string Body { get; set; }
-    }
-
-    public class Category
-    {
-        [JsonProperty("cid")]
-        public int Id { get; set; }
-        [JsonProperty("name")]
-        public string Name { get; set; }
-    }
-
     public class Assignment3Tests
     {
         private const int Port = 5000;
-
 
         //////////////////////////////////////////////////////////
         /// 
