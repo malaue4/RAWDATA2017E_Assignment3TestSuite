@@ -8,7 +8,7 @@ using Assignment3TestSuite;
 
 namespace TestServer
 {
-    class Program
+    public class Program
     {
         static void Main(string[] args)
         {
@@ -32,7 +32,7 @@ namespace TestServer
                 Console.WriteLine("client accepted");
                 var thread = new Thread(HandleClient);
                 
-                _server.Stop();
+ //              _server.Stop();
 
                 thread.Start(client);
             }

@@ -7,9 +7,23 @@ using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Xunit;
+using Assignment3TestSuite;
 
 namespace Assignment3TestSuite
 {
+
+    public class TestsFixture : IDisposable
+    {
+        public TestsFixture()
+        {
+            
+        }
+
+        public void Dispose()
+        {
+
+        }
+    }
 
     public class Response
     {
