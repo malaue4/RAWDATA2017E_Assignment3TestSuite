@@ -4,10 +4,27 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-using Assignment3TestSuite;
+using Newtonsoft.Json;
 
 namespace TestServer
 {
+
+
+    public class Response
+    {
+        public string Status { get; set; }
+        public string Body { get; set; }
+    }
+
+    public class Category
+    {
+        [JsonProperty("cid")]
+        public int Id { get; set; }
+        [JsonProperty("name")]
+        public string Name { get; set; }
+    }
+
+        
     public class Program
     {
         static void Main(string[] args)
@@ -18,6 +35,7 @@ namespace TestServer
 
         private TcpListener _server;
         private List<Category> _categories;
+        private bool isRunning;
 
         public Program()
         {
@@ -25,18 +43,29 @@ namespace TestServer
             _server.Start();
             _categories = new List<Category>();
 
-            while (true)
+
+        }
+
+        public void StartServer()
+        {
+
+            isRunning = true;
+
+            while (isRunning)
             {
                 var client = _server.AcceptTcpClient();
 
                 Console.WriteLine("client accepted");
                 var thread = new Thread(HandleClient);
-                
- //              _server.Stop();
 
                 thread.Start(client);
             }
+        }
 
+        public void StopServer()
+        {
+            isRunning = false;
+            _server.Stop();
         }
 
         void HandleClient(object clientObject)
