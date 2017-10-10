@@ -31,6 +31,8 @@ namespace TestServer
 
                 Console.WriteLine("client accepted");
                 var thread = new Thread(HandleClient);
+                
+                _server.Stop();
 
                 thread.Start(client);
             }
