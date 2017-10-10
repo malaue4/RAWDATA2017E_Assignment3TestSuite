@@ -4,25 +4,10 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-using Newtonsoft.Json;
+using Assignment3TestSuite;
 
 namespace TestServer
 {
-
-    public class Response
-    {
-        public string Status { get; set; }
-        public string Body { get; set; }
-    }
-
-    public class Category
-    {
-        [JsonProperty("cid")]
-        public int Id { get; set; }
-        [JsonProperty("name")]
-        public string Name { get; set; }
-    }
-
     public class Program
     {
         static void Main(string[] args)
@@ -46,6 +31,8 @@ namespace TestServer
 
                 Console.WriteLine("client accepted");
                 var thread = new Thread(HandleClient);
+                
+ //              _server.Stop();
 
                 thread.Start(client);
             }
