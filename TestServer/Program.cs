@@ -48,7 +48,24 @@ namespace TestServer
         {
             _server = new TcpListener(IPAddress.Loopback, 5000);
             _server.Start();
-            _categories = new List<Category>();
+            _categories = new List<Category>
+            {
+                new Category()
+                {
+                    Id = 1,
+                    Name = "Beverages"
+                },
+                new Category()
+                {
+                    Id = 2,
+                    Name = "Condiments"
+                },
+                new Category()
+                {
+                    Id = 3,
+                    Name = "Confections"
+                }
+            };
         }
 
         public void StartServer()
