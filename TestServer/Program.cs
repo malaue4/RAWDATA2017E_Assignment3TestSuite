@@ -42,8 +42,6 @@ namespace TestServer
             _server = new TcpListener(IPAddress.Loopback, 5000);
             _server.Start();
             _categories = new List<Category>();
-
-
         }
 
         public void StartServer()
@@ -93,10 +91,6 @@ namespace TestServer
 
 
             }
-
-
-       
         }
-
     }
 }
