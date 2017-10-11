@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
 
 using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 
 namespace TestServer
 {
@@ -27,6 +25,23 @@ namespace TestServer
         public string Name { get; set; }
     }
 
+    public class Request
+    {
+
+        [JsonProperty("method")]
+        public string method;
+
+        [JsonProperty("path")]
+        public string path;
+
+        [JsonProperty("date")]
+        public string date;
+
+        [JsonProperty("body")]
+        public string body;
+
+    }
+
 
     public class Program
     {
@@ -37,24 +52,26 @@ namespace TestServer
         }
 
         private TcpListener _server;
-        private List<Category> _categories;
+        //private List<Category> _categories;
+        private DataBase _data;
         private bool _isRunning;
 
         private readonly string[] _methodNames = { "read", "create", "update", "delete", "echo" };
         private readonly string _pathPrefix = "/api/categories";
 
-        readonly string StatusOk = "1 Ok";
-        readonly string StatusCreated = "2 Created";
-        readonly string StatusUpdated = "3 Updated";
-        readonly string StatusBadRequest = "4 Bad Request";
-        readonly string StatusNotFound = "5 Not Found";
-        readonly string StatusError = "6 Error";
+        private const string StatusOk = "1 Ok";
+        private const string StatusCreated = "2 Created";
+        private const string StatusUpdated = "3 Updated";
+        private const string StatusBadRequest = "4 Bad Request";
+        private const string StatusNotFound = "5 Not Found";
+        private const string StatusError = "6 Error";
 
 
         public Program()
         {
             _server = new TcpListener(IPAddress.Loopback, 5000);
-            _categories = new List<Category>
+            _data = new DataBase();
+            /*_categories = new List<Category>
             {
                 new Category
                 {
@@ -71,14 +88,13 @@ namespace TestServer
                     Id = 3,
                     Name = "Confections"
                 }
-            };
+            };*/
         }
 
         public void StartServer()
         {
             _server.Start();
             _isRunning = true;
-            Console.WriteLine(_categories.ToJson());
             while (_isRunning)
             {
                 if (_server.Pending())
@@ -157,24 +173,25 @@ namespace TestServer
             switch (request.method)
             {
                 case "read":
-                    if (pathId > 0 && pathId <= _categories.Count)
+                    
+                    if (pathId != -1)
                     {
-                        response.Body = _categories[pathId - 1].ToJson();
-
-                        response.Status = StatusOk;
-                    }
-                    else if (pathId > _categories.Count)
-                    {
-                        response.Status = StatusNotFound;
+                        //if (pathId > 0 && pathId <= _categories.Count)
+                        if (_data.HasCategory(pathId))
+                        {
+                            //response.Body = _categories[pathId - 1].ToJson();
+                            response.Body = _data.GetCategory(pathId).ToJson();
+                            response.Status = StatusOk;
+                        }
+                        else
+                        {
+                            response.Status = StatusNotFound;
+                        }
                     }
                     else
                     {
-                        string allCats = "";
-
-                        allCats = _categories.ToJson();
-
-                        response.Body = allCats;
-
+                        //response.Body = _categories.ToJson();
+                        response.Body = _data.GetCategories().ToJson();
                         response.Status = StatusOk;
                     }
 
@@ -183,8 +200,9 @@ namespace TestServer
                     if (pathId == -1)
                     {
                         Category cat = request.body.FromJson<Category>();
-                        cat.Id = _categories.Count + 1;
-                        _categories.Add(cat);
+                        //cat.Id = _categories.Count + 1;
+                        //_categories.Add(cat);
+                        cat = _data.CreateCategory(cat.Name);
                         response.Body = cat.ToJson();
                         response.Status = StatusCreated;
                     }
@@ -196,9 +214,11 @@ namespace TestServer
                 case "update":
                     if (pathId != -1)
                     {
-                        if (pathId <= _categories.Count)
+                        //if (pathId <= _categories.Count)
+                        if (_data.HasCategory(pathId))
                         {
-                            _categories[pathId - 1] = request.body.FromJson<Category>();
+                            //_categories[pathId - 1] = request.body.FromJson<Category>();
+                            _data.UpdateCategory(request.body.FromJson<Category>());
                             response.Status = StatusUpdated;
                         }
                         else
@@ -214,9 +234,11 @@ namespace TestServer
                 case "delete":
                     if (pathId != -1)
                     {
-                        if (pathId <= _categories.Count)
+                        //if (pathId <= _categories.Count)
+                        if (_data.HasCategory(pathId))
                         {
-                            _categories.RemoveAt(pathId - 1);
+                            //_categories.RemoveAt(pathId - 1);
+                            _data.DeleteCategory(_data.GetCategory(pathId));
                             response.Status = StatusOk;
                         }
                         else
@@ -317,65 +339,6 @@ namespace TestServer
                 response.Status = statusCode + " " + string.Join(", ", reasons);
             return response;
 
-        }
-
-        public class Request
-        {
-
-            [JsonProperty("method")]
-            public string method;
-
-            [JsonProperty("path")]
-            public string path;
-
-            [JsonProperty("date")]
-            public string date;
-
-            [JsonProperty("body")]
-            public string body;
-
-        }
-
-    }
-
-    public static class Util
-    {
-
-        public static void SendResponse(this TcpClient client, string response)
-        {
-            var msg = Encoding.UTF8.GetBytes(response);
-            client.GetStream().Write(msg, 0, msg.Length);
-        }
-
-        public static Program.Request ReadRequest(this TcpClient client)
-        {
-            var stream = client.GetStream();
-            //strm.ReadTimeout = 250;
-            byte[] resp = new byte[2048];
-            using (var memStream = new MemoryStream())
-            {
-                int bytesread = 0;
-                do
-                {
-                    bytesread = stream.Read(resp, 0, resp.Length);
-                    memStream.Write(resp, 0, bytesread);
-
-                } while (bytesread == 2048);
-
-                var responseData = Encoding.UTF8.GetString(memStream.ToArray());
-                return JsonConvert.DeserializeObject<Program.Request>(responseData);
-            }
-        }
-
-        public static string ToJson(this object data)
-        {
-            return JsonConvert.SerializeObject(data,
-                new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() });
-        }
-
-        public static T FromJson<T>(this string element)
-        {
-            return JsonConvert.DeserializeObject<T>(element);
         }
 
     }
