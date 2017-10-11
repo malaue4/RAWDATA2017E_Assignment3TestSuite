@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -12,7 +11,7 @@ using Newtonsoft.Json.Serialization;
 
 namespace TestServer
 {
-    
+
 
     public class Response
     {
@@ -39,11 +38,11 @@ namespace TestServer
 
         private TcpListener _server;
         private List<Category> _categories;
-        private bool isRunning;
+        private bool _isRunning;
 
-        private String[] methodNames = {"read", "create", "update", "delete", "echo"};
-        private String pathPrefix = "/api/categories";
-        
+        private readonly string[] _methodNames = { "read", "create", "update", "delete", "echo" };
+        private readonly string _pathPrefix = "/api/categories";
+
         readonly string StatusOk = "1 Ok";
         readonly string StatusCreated = "2 Created";
         readonly string StatusUpdated = "3 Updated";
@@ -55,20 +54,19 @@ namespace TestServer
         public Program()
         {
             _server = new TcpListener(IPAddress.Loopback, 5000);
-            _server.Start();
             _categories = new List<Category>
             {
-                new Category()
+                new Category
                 {
                     Id = 1,
                     Name = "Beverages"
                 },
-                new Category()
+                new Category
                 {
                     Id = 2,
                     Name = "Condiments"
                 },
-                new Category()
+                new Category
                 {
                     Id = 3,
                     Name = "Confections"
@@ -78,10 +76,10 @@ namespace TestServer
 
         public void StartServer()
         {
-
-            isRunning = true;
+            _server.Start();
+            _isRunning = true;
             Console.WriteLine(_categories.ToJson());
-            while (isRunning)
+            while (_isRunning)
             {
                 if (_server.Pending())
                 {
@@ -97,20 +95,17 @@ namespace TestServer
 
         public void StopServer()
         {
-
-            isRunning = false;
+            _isRunning = false;
             _server.Stop();
         }
 
-        void HandleClient(object clientObject)
+        private void HandleClient(object clientObject)
         {
             try
             {
-                //var client = clientObject as TcpClient;
-                //if (client == null) return;
                 using (var client = clientObject as TcpClient)
                 {
-                    RequestObject request = client.ReadRequest();
+                    Request request = client.ReadRequest();
 
                     Response response = CheckValidity(request);
 
@@ -118,10 +113,11 @@ namespace TestServer
                     {
                         response = HandleRequest(request);
                     }
-                    Console.WriteLine();
+
+                    Console.WriteLine("-->");
                     Console.WriteLine(request.ToJson());
                     Console.WriteLine(response.ToJson());
-                    Console.WriteLine();
+                    Console.WriteLine("<--");
 
                     client.SendResponse(response.ToJson());
 
@@ -129,43 +125,14 @@ namespace TestServer
             }
             catch (Exception e)
             {
-                Console.WriteLine("somthing went wrong: "+e.Message);
+                Console.WriteLine("Something went wrong: " + e.Message);
             }
-
-            /*
-            var strm = client.GetStream();
-            //strm.ReadTimeout = 250;
-            byte[] resp = new byte[2048];
-            using (var memStream = new MemoryStream())
-            {
-                int bytesread = 0;
-                do
-                {
-                    bytesread = strm.Read(resp, 0, resp.Length);
-                    memStream.Write(resp, 0, bytesread);
-
-                } while (bytesread == 2048);
-
-                var responseData = Encoding.UTF8.GetString(memStream.ToArray());
-               // Console.WriteLine(responseData.ToString());
-                RequestObject obj = new RequestObject();
-                obj = JsonConvert.DeserializeObject<RequestObject>(responseData);
-                Response responseObj;
-                responseObj = CheckValidity(obj);
-                String response = JsonConvert.SerializeObject(responseObj);
-                Console.WriteLine(response);
-                var msg = Encoding.UTF8.GetBytes(response);
-                client.GetStream().Write(msg, 0, msg.Length);
-                //Console.WriteLine("Method: "+obj.method+" - Path: "+obj.path+" - Date: "+obj.date+" - Body: "+obj.body);
-            }
-            */
         }
 
-        private Response HandleRequest(RequestObject _obj)
+        private Response HandleRequest(Request request)
         {
             Response response = new Response();
-            //String statusCode = StatusOk;
-            String[] path = _obj.path.Split("/", StringSplitOptions.RemoveEmptyEntries);
+            string[] path = request.path.Split("/", StringSplitOptions.RemoveEmptyEntries);
             int pathId = -1;
             if (path[1] != "categories")
             {
@@ -184,44 +151,44 @@ namespace TestServer
                     response.Status = StatusBadRequest;
                     return response;
                 }
-                
+
             }
-            Console.WriteLine(path.Length);
-            switch (_obj.method)
+
+            switch (request.method)
             {
                 case "read":
                     if (pathId > 0 && pathId <= _categories.Count)
                     {
-                        response.Body = _categories[pathId-1].ToJson();
-                       
+                        response.Body = _categories[pathId - 1].ToJson();
+
                         response.Status = StatusOk;
                     }
-                    else if(pathId > _categories.Count)
+                    else if (pathId > _categories.Count)
                     {
                         response.Status = StatusNotFound;
                     }
-                    else 
+                    else
                     {
-                        String allCats ="";
-                       
+                        string allCats = "";
+
                         allCats = _categories.ToJson();
 
                         response.Body = allCats;
 
                         response.Status = StatusOk;
                     }
-                   
+
                     break;
                 case "create":
                     if (pathId == -1)
                     {
-                        Category cat = _obj.body.FromJson<Category>();
-                        Console.WriteLine(cat.Name);
+                        Category cat = request.body.FromJson<Category>();
                         cat.Id = _categories.Count + 1;
                         _categories.Add(cat);
                         response.Body = cat.ToJson();
                         response.Status = StatusCreated;
-                    } else
+                    }
+                    else
                     {
                         response.Status = StatusBadRequest;
                     }
@@ -231,7 +198,7 @@ namespace TestServer
                     {
                         if (pathId <= _categories.Count)
                         {
-                            _categories[pathId - 1] = _obj.body.FromJson<Category>();
+                            _categories[pathId - 1] = request.body.FromJson<Category>();
                             response.Status = StatusUpdated;
                         }
                         else
@@ -263,31 +230,30 @@ namespace TestServer
                     }
                     break;
                 case "echo":
-                    response.Body = _obj.body;
+                    response.Body = request.body;
                     response.Status = StatusOk;
                     break;
             }
-
-            //reasons = statusCode + reasons;
-            //response.Status = reasons;
+            
             return response;
         }
 
-        private Response CheckValidity(RequestObject request)
+        private Response CheckValidity(Request request)
         {
 
             Response response = new Response();
-            String status = "";
-            String statusCode = "1 Ok";
-                if(request.method == null)
+            List<string> reasons = new List<string>();
+            string statusCode = StatusOk;
+            if (request.method == null)
             {
-                status += " missing method,";
-                statusCode = "4 Bad Request";
-            } else if (!Array.Exists(methodNames, s => s.Equals(request.method)))
-                {
-                status += "illegal method,";
-                statusCode = "4 Bad Request";
-                }
+                reasons.Add("missing method");
+                statusCode = StatusBadRequest;
+            }
+            else if (!Array.Exists(_methodNames, s => s.Equals(request.method)))
+            {
+                reasons.Add("illegal method");
+                statusCode = StatusBadRequest;
+            }
 
 
             if (request.method == "echo")
@@ -299,21 +265,21 @@ namespace TestServer
             {
                 if (request.path == null)
                 {
-                    status += " missing resource,";
-                    statusCode = "4 Bad Request";
+                    reasons.Add("missing resource");
+                    statusCode = StatusBadRequest;
                 }
-                else if (!request.path.StartsWith(pathPrefix))
+                else if (!request.path.StartsWith(_pathPrefix))
                 {
                     //status += "illegal resource,";
-                    statusCode = "4 Bad Request";
+                    statusCode = StatusBadRequest;
                 }
             }
             if (request.date == null)
             {
-                status += " missing date,";
-                statusCode = "4 Bad Request";
+                reasons.Add("missing date");
+                statusCode = StatusBadRequest;
             }
-            else 
+            else
             {
                 try
                 {
@@ -322,8 +288,8 @@ namespace TestServer
                 catch (Exception)
                 {
 
-                    status += " illegal date,";
-                    statusCode = "4 Bad Request";
+                    reasons.Add("illegal date");
+                    statusCode = StatusBadRequest;
 
                 }
             }
@@ -332,45 +298,44 @@ namespace TestServer
                 if (request.body == null)
                 {
 
-                    status += " missing body,";
-                    statusCode = "4 Bad Request";
+                    reasons.Add("missing body");
+                    statusCode = StatusBadRequest;
 
                 }
                 else if (!request.body.StartsWith("{") && !request.body.EndsWith("}"))
                 {
-                    status += " illegal body,";
-                    statusCode = "4 Bad Request";
+                    reasons.Add("illegal body");
+                    statusCode = StatusBadRequest;
 
                 }
             }
 
-            status = statusCode + status;
-            response.Status = status;
+
+            if (reasons.Count == 0)
+                response.Status = statusCode;
+            else
+                response.Status = statusCode + " " + string.Join(", ", reasons);
             return response;
 
         }
-        
-            
-        
-    
-        public class RequestObject {
+
+        public class Request
+        {
 
             [JsonProperty("method")]
-            public String method;
+            public string method;
 
             [JsonProperty("path")]
-            public String path;
+            public string path;
 
             [JsonProperty("date")]
-            public String date;
+            public string date;
 
             [JsonProperty("body")]
-            public String body;
+            public string body;
 
         }
 
-  
-              
     }
 
     public static class Util
@@ -382,9 +347,9 @@ namespace TestServer
             client.GetStream().Write(msg, 0, msg.Length);
         }
 
-        public static Program.RequestObject ReadRequest(this TcpClient client)
+        public static Program.Request ReadRequest(this TcpClient client)
         {
-            var strm = client.GetStream();
+            var stream = client.GetStream();
             //strm.ReadTimeout = 250;
             byte[] resp = new byte[2048];
             using (var memStream = new MemoryStream())
@@ -392,13 +357,13 @@ namespace TestServer
                 int bytesread = 0;
                 do
                 {
-                    bytesread = strm.Read(resp, 0, resp.Length);
+                    bytesread = stream.Read(resp, 0, resp.Length);
                     memStream.Write(resp, 0, bytesread);
 
                 } while (bytesread == 2048);
 
                 var responseData = Encoding.UTF8.GetString(memStream.ToArray());
-                return JsonConvert.DeserializeObject<Program.RequestObject>(responseData);
+                return JsonConvert.DeserializeObject<Program.Request>(responseData);
             }
         }
 
