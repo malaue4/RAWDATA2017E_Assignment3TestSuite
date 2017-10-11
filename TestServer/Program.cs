@@ -95,20 +95,24 @@ namespace TestServer
                 } while (bytesread == 2048);
 
                 var responseData = Encoding.UTF8.GetString(memStream.ToArray());
-                Console.WriteLine(responseData.ToString());
+               // Console.WriteLine(responseData.ToString());
                 RequestObject obj = new RequestObject();
                 obj = JsonConvert.DeserializeObject<RequestObject>(responseData);
-                String response;
-                response = CheckValidity(obj);
+                Response responseObj;
+                responseObj = CheckValidity(obj);
+                String response = JsonConvert.SerializeObject(responseObj);
                 Console.WriteLine(response);
+                var msg = Encoding.UTF8.GetBytes(response);
+                client.GetStream().Write(msg, 0, msg.Length);
                 //Console.WriteLine("Method: "+obj.method+" - Path: "+obj.path+" - Date: "+obj.date+" - Body: "+obj.body);
             }
         }
 
-        private String CheckValidity(RequestObject _obj)
+        private Response CheckValidity(RequestObject _obj)
         {
 
-            String status=" ";
+            Response response = new Response();
+            String status = " ";
             int statusCode = 1;
                 if(_obj.method == null)
             {
@@ -156,7 +160,8 @@ namespace TestServer
                 statusCode = 4;
             }
             status = statusCode + status;
-            return status;
+            response.Status = status;
+            return response;
 
         }
         
@@ -178,4 +183,6 @@ namespace TestServer
         public String body;
 
         }
+
+  
 }
