@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading;
 
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace TestServer
 {
@@ -81,6 +82,16 @@ namespace TestServer
             var client = clientObject as TcpClient;
             if (client == null) return;
 
+            RequestObject request = client.ReadRequest();
+
+            Response response = CheckValidity(request);
+
+            Console.WriteLine(response.ToJson());
+
+            client.SendResponse(response.ToJson());
+
+
+            /*
             var strm = client.GetStream();
             //strm.ReadTimeout = 250;
             byte[] resp = new byte[2048];
@@ -105,7 +116,7 @@ namespace TestServer
                 var msg = Encoding.UTF8.GetBytes(response);
                 client.GetStream().Write(msg, 0, msg.Length);
                 //Console.WriteLine("Method: "+obj.method+" - Path: "+obj.path+" - Date: "+obj.date+" - Body: "+obj.body);
-            }
+            }*/
         }
 
         private Response CheckValidity(RequestObject _obj)
@@ -167,20 +178,20 @@ namespace TestServer
         
             
         
-    }
-    class RequestObject {
+    
+        public class RequestObject {
 
-        [JsonProperty("method")]
-        public String method;
+            [JsonProperty("method")]
+            public String method;
 
-        [JsonProperty("path")]
-        public String path;
+            [JsonProperty("path")]
+            public String path;
 
-        [JsonProperty("date")]
-        public String date;
+            [JsonProperty("date")]
+            public String date;
 
-        [JsonProperty("body")]
-        public String body;
+            [JsonProperty("body")]
+            public String body;
 
         }
 
@@ -197,7 +208,7 @@ namespace TestServer
             client.GetStream().Write(msg, 0, msg.Length);
         }
 
-        public static Request ReadRequest(this TcpClient client)
+        public static Program.RequestObject ReadRequest(this TcpClient client)
         {
             var strm = client.GetStream();
             //strm.ReadTimeout = 250;
@@ -213,8 +224,20 @@ namespace TestServer
                 } while (bytesread == 2048);
 
                 var responseData = Encoding.UTF8.GetString(memStream.ToArray());
-                return JsonConvert.DeserializeObject<Response>(responseData);
+                return JsonConvert.DeserializeObject<Program.RequestObject>(responseData);
             }
         }
+
+        public static string ToJson(this object data)
+        {
+            return JsonConvert.SerializeObject(data,
+                new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() });
+        }
+
+        public static T FromJson<T>(this string element)
+        {
+            return JsonConvert.DeserializeObject<T>(element);
+        }
+
     }
 }
