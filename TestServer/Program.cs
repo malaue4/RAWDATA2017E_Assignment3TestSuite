@@ -4,7 +4,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-using Assignment3TestSuite;
+
 using Newtonsoft.Json;
 
 namespace TestServer
@@ -65,6 +65,7 @@ namespace TestServer
 
         public void StopServer()
         {
+            
             isRunning = false;
             _server.Stop();
         }
@@ -82,10 +83,9 @@ namespace TestServer
                 String requestStr = Encoding.UTF8.GetString(buffer);
                 requestStr = requestStr.Trim('\0');
                 Console.WriteLine(requestStr);
-                var category = new Category();
-                category = JsonConvert.DeserializeObject<Category>(requestStr);
+                
 
-                Console.WriteLine(category.Id+", "+category.Name);
+                //Console.WriteLine(category.Id+", "+category.Name);
 
                 
             }
