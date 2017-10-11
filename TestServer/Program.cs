@@ -30,7 +30,7 @@ namespace TestServer
         static void Main(string[] args)
         {
             Console.WriteLine("Hello World!");
-            new Program();
+            new Program().StartServer();
         }
 
         private TcpListener _server;
@@ -53,12 +53,15 @@ namespace TestServer
 
             while (isRunning)
             {
-                var client = _server.AcceptTcpClient();
+                if (_server.Pending())
+                {
+                    var client = _server.AcceptTcpClient();
 
-                Console.WriteLine("client accepted");
-                var thread = new Thread(HandleClient);
+                    Console.WriteLine("client accepted");
+                    var thread = new Thread(HandleClient);
 
-                thread.Start(client);
+                    thread.Start(client);
+                }
             }
         }
 
@@ -73,14 +76,14 @@ namespace TestServer
             var client = clientObject as TcpClient;
             if (client == null) return;
             var networkStream = client.GetStream();
-
-            while (networkStream.DataAvailable)
-            {
-                byte[] buffer = new byte[client.ReceiveBufferSize];
-                networkStream.Read(buffer, 0, buffer.Length);
-                Console.WriteLine(Encoding.UTF8.GetString(buffer));
-            }
-
+            
+            byte[] buffer = new byte[client.ReceiveBufferSize];
+            networkStream.Read(buffer, 0, buffer.Length);
+            Console.WriteLine(Encoding.UTF8.GetString(buffer));
+            
+            networkStream.Write(buffer, 0, buffer.Length);
+            networkStream.Close();
+            client.Close();
         }
 
     }

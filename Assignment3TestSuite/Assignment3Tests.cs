@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -23,21 +24,20 @@ namespace Assignment3TestSuite
         {
             Console.WriteLine("Hello");
             thread = new Thread(StartProgram);
-            program = new Program();
-            thread.Start();
+            //program = new Program();
+            //thread.Start();
         }
 
         public void StartProgram()
         {
-            program.StartServer();
+            //program.StartServer();
         }
 
         public void Dispose()
         {
 
             Console.WriteLine("Goodbye");
-            program.StopServer();
-            thread.Join();
+            //program.StopServer();
         }
     }
 
