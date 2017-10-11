@@ -4,7 +4,6 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-using Assignment3TestSuite;
 using Newtonsoft.Json;
 
 namespace TestServer
@@ -43,8 +42,6 @@ namespace TestServer
             _server = new TcpListener(IPAddress.Loopback, 5000);
             _server.Start();
             _categories = new List<Category>();
-
-
         }
 
         public void StartServer()
@@ -87,12 +84,7 @@ namespace TestServer
 
                 Console.WriteLine(category.Id+", "+category.Name);
 
-                
             }
-
-
-       
         }
-
     }
 }
