@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -75,22 +76,23 @@ namespace TestServer
         {
             var client = clientObject as TcpClient;
             if (client == null) return;
-            var networkStream = client.GetStream();
 
-            while (networkStream.DataAvailable)
+            var strm = client.GetStream();
+            //strm.ReadTimeout = 250;
+            byte[] resp = new byte[2048];
+            using (var memStream = new MemoryStream())
             {
-                byte[] buffer = new byte[client.ReceiveBufferSize];
-                var request = networkStream.Read(buffer, 0, buffer.Length);
-                String requestStr = Encoding.UTF8.GetString(buffer);
-                requestStr = requestStr.Trim('\0');
-                Console.WriteLine(requestStr);
-                
+                int bytesread = 0;
+                do
+                {
+                    bytesread = strm.Read(resp, 0, resp.Length);
+                    memStream.Write(resp, 0, bytesread);
 
-                Console.WriteLine(category.Id+", "+category.Name);
-                networkStream.Close();
-                client.Close();
+                } while (bytesread == 2048);
 
-
+                var responseData = Encoding.UTF8.GetString(memStream.ToArray());
+                Console.WriteLine(responseData.ToString());
+                //    return JsonConvert.DeserializeObject<Response>(responseData);
             }
         }
     }

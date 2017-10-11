@@ -14,9 +14,9 @@ using Xunit;
 namespace Assignment3TestSuite
 {
 
-    public class TestsFixture : IDisposable
+    public class TestsFixture //: IDisposable
     {
-
+        /*
         private Program program;
         private Thread thread;
 
@@ -39,6 +39,7 @@ namespace Assignment3TestSuite
             Console.WriteLine("Goodbye");
             //program.StopServer();
         }
+        */
     }
 
     public class Response
