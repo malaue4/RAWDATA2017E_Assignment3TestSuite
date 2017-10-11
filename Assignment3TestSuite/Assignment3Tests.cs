@@ -52,7 +52,7 @@ namespace Assignment3TestSuite
 
             var response = client.ReadResponse();
 
-            Assert.True(response.Status.ToLower().Contains("missing method"));
+            Assert.Contains("missing method", response.Status.ToLower());
         }
 
         [Fact]
@@ -107,7 +107,7 @@ namespace Assignment3TestSuite
 
             var response = client.ReadResponse();
 
-            Assert.True(response.Status.ToLower().Contains("missing date"));
+            Assert.Contains("missing date", response.Status.ToLower());
         }
 
         [Fact]
@@ -626,7 +626,7 @@ namespace Assignment3TestSuite
             byte[] resp = new byte[2048];
             using (var memStream = new MemoryStream())
             {
-                int bytesread = 0;
+                int bytesread;
                 do
                 {
                     bytesread = strm.Read(resp, 0, resp.Length);
