@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -11,7 +12,7 @@ using Newtonsoft.Json.Serialization;
 
 namespace TestServer
 {
-
+    
 
     public class Response
     {
@@ -40,9 +41,16 @@ namespace TestServer
         private List<Category> _categories;
         private bool isRunning;
 
-        private String[] methodNames = { "read", "create", "update", "delete","echo" };
+        private String[] methodNames = {"read", "create", "update", "delete", "echo"};
         private String pathPrefix = "/api/categories";
         
+        readonly string StatusOk = "1 Ok";
+        readonly string StatusCreated = "2 Created";
+        readonly string StatusUpdated = "3 Updated";
+        readonly string StatusBadRequest = "4 Bad Request";
+        readonly string StatusNotFound = "5 Not Found";
+        readonly string StatusError = "6 Error";
+
 
         public Program()
         {
@@ -106,14 +114,14 @@ namespace TestServer
 
                     Response response = CheckValidity(request);
 
-            if (response.Status.Contains("1"))
-            {
-                response = HandleRequest(request);
-            }
-            Console.WriteLine();
-            Console.WriteLine(request.ToJson());
-            Console.WriteLine(response.ToJson());
-            Console.WriteLine();
+                    if (response.Status.Contains("1"))
+                    {
+                        response = HandleRequest(request);
+                    }
+                    Console.WriteLine();
+                    Console.WriteLine(request.ToJson());
+                    Console.WriteLine(response.ToJson());
+                    Console.WriteLine();
 
                     client.SendResponse(response.ToJson());
 
@@ -149,16 +157,22 @@ namespace TestServer
                 var msg = Encoding.UTF8.GetBytes(response);
                 client.GetStream().Write(msg, 0, msg.Length);
                 //Console.WriteLine("Method: "+obj.method+" - Path: "+obj.path+" - Date: "+obj.date+" - Body: "+obj.body);
-            }*/
+            }
+            */
         }
 
         private Response HandleRequest(RequestObject _obj)
         {
             Response response = new Response();
-            String status = " ";
-            String statusCode = "1 Ok";
+            //String statusCode = StatusOk;
             String[] path = _obj.path.Split("/", StringSplitOptions.RemoveEmptyEntries);
             int pathId = -1;
+            if (path[1] != "categories")
+            {
+                response.Status = StatusBadRequest;
+                return response;
+
+            }
             if (path.Length > 2)
             {
                 try
@@ -167,10 +181,7 @@ namespace TestServer
                 }
                 catch (Exception)
                 {
-
-                    statusCode = "4 Bad Request illegal resource";
-                    status = statusCode + status;
-                    response.Status = status;
+                    response.Status = StatusBadRequest;
                     return response;
                 }
                 
@@ -183,12 +194,11 @@ namespace TestServer
                     {
                         response.Body = _categories[pathId-1].ToJson();
                        
-                        statusCode = "1 Ok";
+                        response.Status = StatusOk;
                     }
                     else if(pathId > _categories.Count)
                     {
-
-                        statusCode = "5 Not found";
+                        response.Status = StatusNotFound;
                     }
                     else 
                     {
@@ -198,106 +208,137 @@ namespace TestServer
 
                         response.Body = allCats;
 
-                        statusCode = "1 Ok";
+                        response.Status = StatusOk;
                     }
                    
                     break;
                 case "create":
-                    if (path.Length <= 3)
+                    if (pathId == -1)
                     {
                         Category cat = _obj.body.FromJson<Category>();
                         Console.WriteLine(cat.Name);
                         cat.Id = _categories.Count + 1;
                         _categories.Add(cat);
                         response.Body = cat.ToJson();
-                        statusCode = "2 Created";
+                        response.Status = StatusCreated;
                     } else
                     {
-                        statusCode = "4 Bad Request";
+                        response.Status = StatusBadRequest;
                     }
                     break;
                 case "update":
-
+                    if (pathId != -1)
+                    {
+                        if (pathId <= _categories.Count)
+                        {
+                            _categories[pathId - 1] = _obj.body.FromJson<Category>();
+                            response.Status = StatusUpdated;
+                        }
+                        else
+                        {
+                            response.Status = StatusNotFound;
+                        }
+                    }
+                    else
+                    {
+                        response.Status = StatusBadRequest;
+                    }
                     break;
                 case "delete":
-
+                    if (pathId != -1)
+                    {
+                        if (pathId <= _categories.Count)
+                        {
+                            _categories.RemoveAt(pathId - 1);
+                            response.Status = StatusOk;
+                        }
+                        else
+                        {
+                            response.Status = StatusNotFound;
+                        }
+                    }
+                    else
+                    {
+                        response.Status = StatusBadRequest;
+                    }
                     break;
                 case "echo":
-
+                    response.Body = _obj.body;
+                    response.Status = StatusOk;
                     break;
             }
 
-            status = statusCode + status;
-            response.Status = status;
+            //reasons = statusCode + reasons;
+            //response.Status = reasons;
             return response;
         }
 
-        private Response CheckValidity(RequestObject _obj)
+        private Response CheckValidity(RequestObject request)
         {
 
             Response response = new Response();
-            String status = " ";
+            String status = "";
             String statusCode = "1 Ok";
-                if(_obj.method == null)
+                if(request.method == null)
             {
-                status += "missing method,";
+                status += " missing method,";
                 statusCode = "4 Bad Request";
-            } else if (!Array.Exists(methodNames, delegate(string s) { return s.Equals(_obj.method); }))
+            } else if (!Array.Exists(methodNames, s => s.Equals(request.method)))
                 {
                 status += "illegal method,";
                 statusCode = "4 Bad Request";
                 }
 
 
-            if (_obj.method == "echo")
+            if (request.method == "echo")
             {
-                response.Body = _obj.body;
+                response.Body = request.body;
 
             }
             else
             {
-                if (_obj.path == null)
+                if (request.path == null)
                 {
-                    status += "missing resource,";
+                    status += " missing resource,";
                     statusCode = "4 Bad Request";
                 }
-                else if (!_obj.path.StartsWith(pathPrefix))
+                else if (!request.path.StartsWith(pathPrefix))
                 {
-                    status += "illegal resource,";
+                    //status += "illegal resource,";
                     statusCode = "4 Bad Request";
                 }
             }
-            if (_obj.date == null)
+            if (request.date == null)
             {
-                status += "missing date,";
+                status += " missing date,";
                 statusCode = "4 Bad Request";
             }
             else 
             {
                 try
                 {
-                    int.Parse(_obj.date);
+                    int.Parse(request.date);
                 }
                 catch (Exception)
                 {
 
-                    status += "illegal date,";
+                    status += " illegal date,";
                     statusCode = "4 Bad Request";
 
                 }
             }
-            if (_obj.method != "read")
+            if (request.method != "read" && request.method != "delete")
             {
-                if (_obj.body == null)
+                if (request.body == null)
                 {
 
-                    status += "missing body,";
+                    status += " missing body,";
                     statusCode = "4 Bad Request";
 
                 }
-                else if (!_obj.body.StartsWith("{") && !_obj.body.EndsWith("}"))
+                else if (!request.body.StartsWith("{") && !request.body.EndsWith("}"))
                 {
-                    status += "illegal body,";
+                    status += " illegal body,";
                     statusCode = "4 Bad Request";
 
                 }
