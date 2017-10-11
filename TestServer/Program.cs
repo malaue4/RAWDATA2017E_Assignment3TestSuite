@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using Assignment3TestSuite;
 using Newtonsoft.Json;
 
 namespace TestServer
@@ -76,14 +77,26 @@ namespace TestServer
             var client = clientObject as TcpClient;
             if (client == null) return;
             var networkStream = client.GetStream();
-            
-            byte[] buffer = new byte[client.ReceiveBufferSize];
-            networkStream.Read(buffer, 0, buffer.Length);
-            Console.WriteLine(Encoding.UTF8.GetString(buffer));
-            
-            networkStream.Write(buffer, 0, buffer.Length);
-            networkStream.Close();
-            client.Close();
+
+            while (networkStream.DataAvailable)
+            {
+                byte[] buffer = new byte[client.ReceiveBufferSize];
+                var request = networkStream.Read(buffer, 0, buffer.Length);
+                String requestStr = Encoding.UTF8.GetString(buffer);
+                requestStr = requestStr.Trim('\0');
+                Console.WriteLine(requestStr);
+                var category = new Category();
+                category = JsonConvert.DeserializeObject<Category>(requestStr);
+
+                Console.WriteLine(category.Id+", "+category.Name);
+                networkStream.Close();
+                client.Close();
+
+
+            }
+
+
+       
         }
 
     }
