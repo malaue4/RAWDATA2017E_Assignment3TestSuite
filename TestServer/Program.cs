@@ -152,18 +152,28 @@ namespace TestServer
                 statusCode = 4;
                 }
 
-                if(_obj.path == null)
+
+            if (_obj.method == "echo")
             {
-                status += "missing path,";
-                statusCode = 4;
-            } else if (!_obj.path.StartsWith(pathPrefix))
+                response.Body = _obj.body;
+
+            }
+            else
             {
-                status += "illegal path,";
-                statusCode = 4;
+                if (_obj.path == null)
+                {
+                    status += "missing resource,";
+                    statusCode = 4;
+                }
+                else if (!_obj.path.StartsWith(pathPrefix))
+                {
+                    status += "illegal resource,";
+                    statusCode = 4;
+                }
             }
             if (_obj.date == null)
             {
-                status += "missing path,";
+                status += "missing date,";
                 statusCode = 4;
             }
             else 
@@ -181,12 +191,19 @@ namespace TestServer
                 }
             }
 
-            if(_obj.body == null)
+            if (_obj.body == null)
             {
 
                 status += "missing body,";
                 statusCode = 4;
+
+            } else if (!_obj.body.StartsWith("{") && !_obj.body.EndsWith("}")) 
+            {
+                status += "illegal body,";
+                statusCode = 4;
+
             }
+
             status = statusCode + status;
             response.Status = status;
             return response;
