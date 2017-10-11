@@ -1,47 +1,15 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
-using TestServer;
 using Xunit;
 
 namespace Assignment3TestSuite
 {
-
-    public class TestsFixture //: IDisposable
-    {
-        /*
-        private Program program;
-        private Thread thread;
-
-        public TestsFixture()
-        {
-            Console.WriteLine("Hello");
-            thread = new Thread(StartProgram);
-            //program = new Program();
-            //thread.Start();
-        }
-
-        public void StartProgram()
-        {
-            //program.StartServer();
-        }
-
-        public void Dispose()
-        {
-
-            Console.WriteLine("Goodbye");
-            //program.StopServer();
-        }
-        */
-    }
-
     public class Response
     {
         public string Status { get; set; }
@@ -56,7 +24,7 @@ namespace Assignment3TestSuite
         public string Name { get; set; }
     }
 
-    public class Assignment3Tests : IClassFixture<TestsFixture>
+    public class Assignment3Tests
     {
         private const int Port = 5000;
 
