@@ -41,7 +41,7 @@ namespace TestServer
         private bool isRunning;
 
         private String[] methodNames = { "read", "create", "update", "delete","echo" };
-        private String pathPrefix = "/api/";
+        private String pathPrefix = "/api/categories";
         
 
         public Program()
@@ -72,7 +72,7 @@ namespace TestServer
         {
 
             isRunning = true;
-
+            Console.WriteLine(_categories.ToJson());
             while (isRunning)
             {
                 if (_server.Pending())
@@ -100,10 +100,17 @@ namespace TestServer
             if (client == null) return;
 
             RequestObject request = client.ReadRequest();
-
+            
             Response response = CheckValidity(request);
 
+            if (response.Status.Contains("1"))
+            {
+                response = HandleRequest(request);
+            }
+            Console.WriteLine();
+            Console.WriteLine(request.ToJson());
             Console.WriteLine(response.ToJson());
+            Console.WriteLine();
 
             client.SendResponse(response.ToJson());
 
@@ -136,20 +143,100 @@ namespace TestServer
             }*/
         }
 
+        private Response HandleRequest(RequestObject _obj)
+        {
+            Response response = new Response();
+            String status = " ";
+            String statusCode = "1 Ok";
+            String[] path = _obj.path.Split("/", StringSplitOptions.RemoveEmptyEntries);
+            int pathId = -1;
+            if (path.Length > 2)
+            {
+                try
+                {
+                    pathId = int.Parse(path[2]);
+                }
+                catch (Exception)
+                {
+
+                    statusCode = "4 Bad Request illegal resource";
+                    status = statusCode + status;
+                    response.Status = status;
+                    return response;
+                }
+                
+            }
+            Console.WriteLine(path.Length);
+            switch (_obj.method)
+            {
+                case "read":
+                    if (pathId > 0 && pathId <= _categories.Count)
+                    {
+                        response.Body = _categories[pathId-1].ToJson();
+                       
+                        statusCode = "1 Ok";
+                    }
+                    else if(pathId > _categories.Count)
+                    {
+
+                        statusCode = "5 Not found";
+                    }
+                    else 
+                    {
+                        String allCats ="";
+                       
+                        allCats = _categories.ToJson();
+
+                        response.Body = allCats;
+
+                        statusCode = "1 Ok";
+                    }
+                   
+                    break;
+                case "create":
+                    if (path.Length <= 3)
+                    {
+                        Category cat = _obj.body.FromJson<Category>();
+                        Console.WriteLine(cat.Name);
+                        cat.Id = _categories.Count + 1;
+                        _categories.Add(cat);
+                        response.Body = cat.ToJson();
+                        statusCode = "2 Created";
+                    } else
+                    {
+                        statusCode = "4 Bad Request";
+                    }
+                    break;
+                case "update":
+
+                    break;
+                case "delete":
+
+                    break;
+                case "echo":
+
+                    break;
+            }
+
+            status = statusCode + status;
+            response.Status = status;
+            return response;
+        }
+
         private Response CheckValidity(RequestObject _obj)
         {
 
             Response response = new Response();
             String status = " ";
-            int statusCode = 1;
+            String statusCode = "1 Ok";
                 if(_obj.method == null)
             {
                 status += "missing method,";
-                statusCode = 4;
+                statusCode = "4 Bad Request";
             } else if (!Array.Exists(methodNames, delegate(string s) { return s.Equals(_obj.method); }))
                 {
                 status += "illegal method,";
-                statusCode = 4;
+                statusCode = "4 Bad Request";
                 }
 
 
@@ -163,18 +250,18 @@ namespace TestServer
                 if (_obj.path == null)
                 {
                     status += "missing resource,";
-                    statusCode = 4;
+                    statusCode = "4 Bad Request";
                 }
                 else if (!_obj.path.StartsWith(pathPrefix))
                 {
                     status += "illegal resource,";
-                    statusCode = 4;
+                    statusCode = "4 Bad Request";
                 }
             }
             if (_obj.date == null)
             {
                 status += "missing date,";
-                statusCode = 4;
+                statusCode = "4 Bad Request";
             }
             else 
             {
@@ -186,22 +273,25 @@ namespace TestServer
                 {
 
                     status += "illegal date,";
-                    statusCode = 4;
+                    statusCode = "4 Bad Request";
 
                 }
             }
-
-            if (_obj.body == null)
+            if (_obj.method != "read")
             {
+                if (_obj.body == null)
+                {
 
-                status += "missing body,";
-                statusCode = 4;
+                    status += "missing body,";
+                    statusCode = "4 Bad Request";
 
-            } else if (!_obj.body.StartsWith("{") && !_obj.body.EndsWith("}")) 
-            {
-                status += "illegal body,";
-                statusCode = 4;
+                }
+                else if (!_obj.body.StartsWith("{") && !_obj.body.EndsWith("}"))
+                {
+                    status += "illegal body,";
+                    statusCode = "4 Bad Request";
 
+                }
             }
 
             status = statusCode + status;
