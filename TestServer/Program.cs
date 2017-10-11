@@ -96,17 +96,26 @@ namespace TestServer
 
         void HandleClient(object clientObject)
         {
-            var client = clientObject as TcpClient;
-            if (client == null) return;
+            try
+            {
+                //var client = clientObject as TcpClient;
+                //if (client == null) return;
+                using (var client = clientObject as TcpClient)
+                {
+                    RequestObject request = client.ReadRequest();
 
-            RequestObject request = client.ReadRequest();
+                    Response response = CheckValidity(request);
 
-            Response response = CheckValidity(request);
+                    Console.WriteLine(response.ToJson());
 
-            Console.WriteLine(response.ToJson());
+                    client.SendResponse(response.ToJson());
 
-            client.SendResponse(response.ToJson());
-
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("somthing went wrong: "+e.Message);
+            }
 
             /*
             var strm = client.GetStream();
